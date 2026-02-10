@@ -16,25 +16,14 @@ from itertools import permutations
 Description:
 
 
-Usage:
-1. This code require envrionment that has the following toolkit:
-    use "conda activate totalseg" first. I've download all required toolkit in
-    the conda environment "totalseg"
-2. Run the code:
-    python3 /data/weiyuq/Code/ct_binary_image_converter.py
-'''
-
-
-# =========================
-# Setup the path and workplace
-# =========================
-dicom_dir = Path("/data/weiyuq/Database_decomposition/LIDC/LIDC-IDRI-0001/01-01-2000-NA-NA-30178/3000566.000000-NA-03192") # Input ct folder path
-work_dir = Path("/data/weiyuq/Database_decomposition/TotalSeg_Output") # Bone seg output path
 
 '''
-Please empty the directory using the following command before running the code:
-rm -rf /data/weiyuq/Database_decomposition/TotalSeg_Output/*
+
 '''
+Setup the path and workplace
+'''
+dicom_dir = Path("[Input ct folder path]") # Input ct folder path
+work_dir = Path("[Bone seg output path]") # Bone seg output path. This path is only a temporary path.
 
 ts_total_dir = work_dir / "ts_total"
 bone_out = work_dir / "bone_mask.nii.gz"
@@ -70,9 +59,9 @@ tissue_value_high = tissue_density * tissue_mask_attenuation_h
 bone_value_high = bone_density * bone_mask_attenuation_h
 
 
-# =========================
-# Extract img data and apply the threshold
-# =========================
+'''
+1. Extract img data and apply the threshold
+'''
 def extract_data_thr(dcm_path: Path):
     '''
     Extract data from dicom for single slice and apply the threshold to prepare
@@ -98,9 +87,9 @@ def extract_data_thr(dcm_path: Path):
     return img
 
 
-# =========================
-# Remove Couch
-# =========================
+'''
+2. Remove Couch
+'''
 def remove_couch(img):
     '''
     Input:
@@ -156,9 +145,9 @@ def remove_couch(img):
     return img_good
 
 
-# =========================
-# Run TotalSegmentator (total task)
-# =========================
+'''
+3. Run TotalSegmentator (total task)
+'''
 def run_totalseg_total(dicom_dir: Path, out_dir: Path, fast: bool):
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -177,9 +166,9 @@ def run_totalseg_total(dicom_dir: Path, out_dir: Path, fast: bool):
 
 
 
-# =========================
-# Get Bone Mask
-# =========================
+'''
+4. Get Bone Mask
+'''
 def get_bone_mask(dicom_dir: Path, ts_total_dir: Path, if_fast: bool):
     '''
     This only need to run one time for each CT.
@@ -201,19 +190,17 @@ def get_bone_mask(dicom_dir: Path, ts_total_dir: Path, if_fast: bool):
 
 
 
-# =========================
-# Sort DICOM slices (robust)
-# =========================
+'''
+5. Sort DICOM slices (robust)
+'''
 def sort_dicom_slices(dicom_dir: Path):
     return sorted(Path(dicom_dir).glob("*.dcm"))
 
 
 
-
-
-# =========================
-# Load bone_mask.nii.gz and align to (Z,H,W)
-# =========================
+'''
+6. Load bone_mask.nii.gz and align to (Z,H,W)
+'''
 def load_bone_mask_as_zyx(bone_nii_path: Path, target_shape_zyx):
     """
     target_shape_zyx = (Z,H,W)
@@ -233,9 +220,9 @@ def load_bone_mask_as_zyx(bone_nii_path: Path, target_shape_zyx):
 
 
 
-# =========================
-# Clean everything after demo
-# =========================
+'''
+7. Clean everything after demo
+'''
 def safe_cleanup(dir_path: Path):
     """
     Delete everything under work_dir after demo.
@@ -245,9 +232,9 @@ def safe_cleanup(dir_path: Path):
     print(f"[Clean] deleted: {dir_path}")
 
 
-# =========================
-# Helpers for building bone mask
-# =========================
+'''
+8. Helpers for building bone mask
+'''
 def load_mask_nii(path: Path):
     """
     Read a single NIfTI mask file from TotalSeg output.
@@ -263,9 +250,9 @@ def load_mask_nii(path: Path):
     return mask, img
 
 
-# =========================
-# Helper function that we save bone map to output directory
-# =========================
+'''
+9. Helper function that we save bone map to output directory
+'''
 def save_mask_like(ref_img: nib.Nifti1Image, mask: np.ndarray, out_path: Path):
     """
     Save mask using the reference NIfTI's affine/header.
@@ -278,9 +265,9 @@ def save_mask_like(ref_img: nib.Nifti1Image, mask: np.ndarray, out_path: Path):
     print(f"[Saved] {out_path}")
 
 
-# =========================
-# Build the bone map
-# =========================
+'''
+10. Build the bone map
+'''
 def build_bone_mask(
     ts_total_dir: Path,
     out_path: Path,
@@ -363,9 +350,9 @@ def build_bone_mask(
 
 
 
-# =========================
-# Integrate bone mask with image
-# =========================
+'''
+11. Integrate bone mask with image
+'''
 def integrate_bone_mask(dicom_dir: Path, bone_out: Path):
     '''
     We will combine bone mask with the ct slice and return them in a list
@@ -402,9 +389,9 @@ def integrate_bone_mask(dicom_dir: Path, bone_out: Path):
     return ct_body_zyx, ct_bone_zyx
 
 
-# =========================
-# Conduct the beam projection
-# =========================
+'''
+12. Conduct the beam projection
+'''
 def beam_projection(mu_total_zyx, spacing_cm):
     """
     Parallel-beam projection (line integral).
@@ -428,9 +415,9 @@ def beam_projection(mu_total_zyx, spacing_cm):
 
 
 
-# =========================
-# Conduct the pathlength projection
-# =========================
+'''
+13. Conduct the pathlength projection
+'''
 def pathlength_proj(soft_bone, spacing_cm):
     dz, dy, dx = spacing_cm
     mask = (soft_bone > 0.0).astype(np.float32)
@@ -438,9 +425,9 @@ def pathlength_proj(soft_bone, spacing_cm):
     return L
 
 
-# =========================
-# Get mu for projection
-# =========================
+'''
+14. Get mu for projection
+'''
 def component_to_mu(ct_component_zyx, mu_value):
     """
     Turn "body" to mu
@@ -456,9 +443,9 @@ def component_to_mu(ct_component_zyx, mu_value):
     return mu
 
 
-# =========================
-# Get high energy projection
-# =========================
+'''
+15. Get high energy projection
+'''
 def get_high_energy_proj(ct_body_zyx, ct_bone_zyx, spacing_cm):
 
     mu_body = component_to_mu(ct_body_zyx, tissue_value_high)
@@ -467,9 +454,9 @@ def get_high_energy_proj(ct_body_zyx, ct_bone_zyx, spacing_cm):
     return beam_projection(mu_total, spacing_cm)
 
 
-# =========================
-# Get low energy projection
-# =========================
+'''
+16. Get low energy projection
+'''
 def get_low_energy_proj(ct_body_zyx, ct_bone_zyx, spacing_cm):
     mu_body = component_to_mu(ct_body_zyx, tissue_value_low)
     mu_bone = component_to_mu(ct_bone_zyx, bone_value_low)
@@ -477,17 +464,17 @@ def get_low_energy_proj(ct_body_zyx, ct_bone_zyx, spacing_cm):
     return beam_projection(mu_total, spacing_cm)
 
 
-# =========================
-# Get pathlength projection
-# =========================
+'''
+17. Get pathlength projection
+'''
 def get_pathlength_proj(ct_body_zyx, ct_bone_zyx, spacing_cm):
     soft_bone = ct_body_zyx + ct_bone_zyx
     return pathlength_proj(soft_bone, spacing_cm)
 
 
-# =========================
-# Stretch to match the resolution
-# =========================
+'''
+18. Stretch to match the resolution
+'''
 def stretch_img(img2d):
     """
     Resample 2D image to 512x512 (or out_hw).
@@ -500,9 +487,9 @@ def stretch_img(img2d):
     return zoom(img2d.astype(np.float32, copy = False), (zy, zx), order = order)
 
 
-# =========================
-# Get spacing to conduct projection
-# =========================
+'''
+19. Get spacing to conduct projection
+'''
 def get_spacing(dicom_dir: Path):
     dcm_paths = sorted(Path(dicom_dir).glob("*.dcm"))
     if len(dcm_paths) < 2:
@@ -519,9 +506,9 @@ def get_spacing(dicom_dir: Path):
     return (dz_mm/10, dy_mm/10, dx_mm/10)
     
 
-# =========================
-# Run the projection
-# =========================
+'''
+20. Run the projection
+'''
 def proj_img_main(ct_body_zyx, ct_bone_zyx):
     """
     End-to-end demo:
@@ -565,98 +552,23 @@ def proj_img_main(ct_body_zyx, ct_bone_zyx):
 
     return P_low_y_stretched, P_high_y_stretched, Pathlength_y_stretched
 
-    # return arrays for debugging if you want
-    #return P_low, P_high, I_low, I_high
 
-
-
-# =========================
-# Run demo (you asked to NOT put demo in main)
-# =========================
-def run_demo_first_time():
-    """
-    Debug only:
-      1) clean workspace
-      2) run TotalSeg -> build bone_out
-      3) plot slice50 demo
-      4) delete everything (work_dir)
-    """
+'''
+ Main workflo
+'''
+def main():
     try:
-        # start clean (optional but recommended for debugging)
+        # start clean
         safe_cleanup(work_dir)
         work_dir.mkdir(parents=True, exist_ok=True)
         get_bone_mask(dicom_dir, ts_total_dir, if_fast)
-        demo_plot_slice50(dicom_dir, bone_out, k=49)
+        ct_body_zyx, ct_bone_zyx = integrate_bone_mask(dicom_dir, bone_out)
+        low_energy_proj, high_energy_proj, pathlength_proj = proj_img_main(ct_body_zyx, ct_bone_zyx)
     finally:
-        # demo ends -> delete ALL
-        #safe_cleanup(work_dir)
-        print("FINISHED")
-        
-
-# =========================
-# Main workflow (demo only for now)
-# =========================
-def main():
-    if_run_demo = True
-    if_test = False
-    if if_test:
-        print("Running test mode...")
-        test()
-    elif if_run_demo:
-        try:
-            # start clean
-            # safe_cleanup(work_dir)
-            work_dir.mkdir(parents=True, exist_ok=True)
-            if bone_out.exists() and ts_total_dir.exists():
-                print(f"[Skip] Found existing bone mask: {bone_out}")
-                print(f"[Skip] Found existing TotalSeg dir: {ts_total_dir}")
-            else:
-                get_bone_mask(dicom_dir, ts_total_dir, if_fast)
-            
-            ct_body_zyx, ct_bone_zyx = integrate_bone_mask(dicom_dir, bone_out)
-            
-            low_energy_proj, high_energy_proj, pathlength_proj = proj_img_main(ct_body_zyx, ct_bone_zyx)
-            '''
-            out_dir = Path(dicom_dir).parent / "bone_map"   
-            out_dir.mkdir(parents=True, exist_ok=True)
-            
-            out_path = out_dir / f"{Path(dicom_dir).name}.npy"
-            np.save(out_path, ct_bone_zyx)
-            
-            print(f"[Saved] {out_path}")
-            '''
-        finally:
-            # this CT ends -> delete ALL
-            # safe_cleanup(work_dir)
-            print("Finshed")
-    else:
-        try:
-            # start clean
-            safe_cleanup(work_dir)
-
-            work_dir.mkdir(parents=True, exist_ok=True)
-            get_bone_mask(dicom_dir, ts_total_dir, if_fast)
-            
-            ct_body_zyx, ct_bone_zyx = integrate_bone_mask(dicom_dir, bone_out)
-            
-            low_energy_proj, high_energy_proj, pathlength_proj = proj_img_main(ct_body_zyx, ct_bone_zyx)
-            '''
-            out_dir = Path(dicom_dir).parent / "bone_map"   
-            out_dir.mkdir(parents=True, exist_ok=True)
-            
-            out_path = out_dir / f"{Path(dicom_dir).name}.npy"
-            np.save(out_path, ct_bone_zyx)
-            
-            print(f"[Saved] {out_path}")
-            '''
-        finally:
-            # this CT ends -> delete ALL
-            safe_cleanup(work_dir)
-            print("Finshed")
+        # this CT ends -> delete ALL
+        safe_cleanup(work_dir)
+        print("Finshed")
         
     
-# =========================
-# Run demo
-# =========================
 if __name__ == "__main__":
     main()
